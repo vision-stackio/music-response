@@ -15,12 +15,12 @@ const ffmpegDir = path.dirname(ffmpegPath as string);
 
 async function searchAndPlay(songName: string) {
   try {
-    console.log(`\n🔍 Searching for: "${songName}"...`);
+    console.log(`\n Searching for: "${songName}"...`);
 
     const results = await YouTube.search(songName, { limit: 5, type: "video" });
 
     if (!results.length) {
-      console.log("❌ No results found.");
+      console.log(" No results found.");
       return askAgain();
     }
 
@@ -30,8 +30,8 @@ async function searchAndPlay(songName: string) {
     });
 
     const video = results[0];
-    console.log(`\n▶️  Selected: ${video.title}`);
-    console.log(`🔗 ${video.url}`);
+    console.log(`\n Selected: ${video.title}`);
+    console.log(` ${video.url}`);
 
     const downloadDir = path.join(process.cwd(), "downloads");
     if (!fs.existsSync(downloadDir)) {
@@ -47,7 +47,7 @@ async function searchAndPlay(songName: string) {
 
     const outputFile = path.join(downloadDir, `${safeTitle}.mp3`);
 
-    console.log("\n⬇️  Downloading & converting to MP3...");
+    console.log("\n⬇  Downloading & converting to MP3...");
 
     await youtubedl(video.url, {
       extractAudio: true,
@@ -74,23 +74,23 @@ async function searchAndPlay(songName: string) {
         .sort((a, b) => b.time - a.time);
 
       if (!files.length) {
-        console.log("❌ MP3 file not found.");
+        console.log(" MP3 file not found.");
         return askAgain();
       }
       finalPath = path.join(downloadDir, files[0].name);
     }
 
-    console.log(`\n✅ Downloaded: ${path.basename(finalPath)}`);
+    console.log(`\n Downloaded: ${path.basename(finalPath)}`);
     playAudio(finalPath);
 
   } catch (error: any) {
-    console.error("\n❌ Error:", error.message || error);
+    console.error("\n Error:", error.message || error);
     askAgain();
   }
 }
 
 function playAudio(filePath: string) {
-  console.log("🔊 Opening with default player...\n");
+  console.log(" Opening with default player...\n");
 
   // This works perfectly on Windows
   exec(`start "" "${filePath}"`, (error) => {
@@ -120,5 +120,5 @@ function askAgain() {
 }
 
 // Start
-console.log("🎵 YouTube → MP3 Player");
+console.log("YouTube → MP3 Player");
 askAgain();
