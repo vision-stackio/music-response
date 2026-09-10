@@ -13,14 +13,18 @@ const rl = readline.createInterface({
 
 const ffmpegDir = path.dirname(ffmpegPath as string);
 
+// ---------- CHANGE THIS IF YOU MANUALLY DOWNLOADED yt-dlp ----------
+const YT_DLP_PATH = "C:\\yt-dlp\\yt-dlp.exe";   // ← set this path
+// ------------------------------------------------------------------
+
 async function searchAndPlay(songName: string) {
   try {
-    console.log(`\n Searching for: "${songName}"...`);
+    console.log(`\n🔍 Searching for: "${songName}"...`);
 
     const results = await YouTube.search(songName, { limit: 5, type: "video" });
 
     if (!results.length) {
-      console.log(" No results found.");
+      console.log("❌ No results found.");
       return askAgain();
     }
 
@@ -30,69 +34,77 @@ async function searchAndPlay(songName: string) {
     });
 
     const video = results[0];
-    console.log(`\n Selected: ${video.title}`);
-    console.log(` ${video.url}`);
+    console.log(`\n✅ Selected: ${video.title}`);
+    console.log(`🔗 ${video.url}`);
 
     const downloadDir = path.join(process.cwd(), "downloads");
     if (!fs.existsSync(downloadDir)) {
       fs.mkdirSync(downloadDir);
     }
 
-    // Clean filename
+    // Clean filename (remove invalid characters)
     const safeTitle = video.title
-      .replace(/[<>:"/\\|?*＂｜]/g, "")
+      .replace(/[<>:"/\\|?*]/g, "")
       .replace(/\s+/g, " ")
       .trim()
       .substring(0, 80);
 
     const outputFile = path.join(downloadDir, `${safeTitle}.mp3`);
 
-    console.log("\n⬇  Downloading & converting to MP3...");
+    console.log("\n⬇ Downloading & converting to MP3...");
 
-    await youtubedl(video.url, {
+    // Build options
+    const options: any = {
       extractAudio: true,
       audioFormat: "mp3",
-      audioQuality: 0,
+      audioQuality: 0,                // best quality
       output: outputFile,
       noCheckCertificates: true,
       noWarnings: true,
       preferFreeFormats: true,
       ffmpegLocation: ffmpegDir,
-      addHeader: ["referer:youtube.com", "user-agent:googlebot"],
-    });
+      addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
+    };
 
-    // Check if file exists
+    // Use custom yt-dlp if the file exists
+    if (fs.existsSync(YT_DLP_PATH)) {
+      options.binaryPath = YT_DLP_PATH;
+      console.log("Using custom yt-dlp binary");
+    }
+
+    await youtubedl(video.url, options);
+
+    // Verify file
     let finalPath = outputFile;
-
     if (!fs.existsSync(outputFile)) {
-      const files = fs.readdirSync(downloadDir)
-        .filter(f => f.toLowerCase().endsWith(".mp3"))
-        .map(f => ({
+      // Sometimes the name is slightly different
+      const files = fs
+        .readdirSync(downloadDir)
+        .filter((f) => f.toLowerCase().endsWith(".mp3"))
+        .map((f) => ({
           name: f,
-          time: fs.statSync(path.join(downloadDir, f)).mtime.getTime()
+          time: fs.statSync(path.join(downloadDir, f)).mtime.getTime(),
         }))
         .sort((a, b) => b.time - a.time);
 
       if (!files.length) {
-        console.log(" MP3 file not found.");
+        console.log("❌ MP3 file not found after download.");
         return askAgain();
       }
       finalPath = path.join(downloadDir, files[0].name);
     }
 
-    console.log(`\n Downloaded: ${path.basename(finalPath)}`);
+    console.log(`\n✅ Downloaded: ${path.basename(finalPath)}`);
     playAudio(finalPath);
-
   } catch (error: any) {
-    console.error("\n Error:", error.message || error);
+    console.error("\n❌ Error:", error.message || error);
     askAgain();
   }
 }
 
 function playAudio(filePath: string) {
-  console.log(" Opening with default player...\n");
+  console.log("🎵 Opening with default player...\n");
 
-  // This works perfectly on Windows
   exec(`start "" "${filePath}"`, (error) => {
     if (error) {
       console.error("Failed to open player:", error.message);
@@ -120,5 +132,7 @@ function askAgain() {
 }
 
 // Start
-console.log("YouTube → MP3 Player");
+console.log("=================================");
+console.log("   YouTube → MP3 Player");
+console.log("=================================");
 askAgain();
