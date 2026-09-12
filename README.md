@@ -4,7 +4,10 @@ To install dependencies:
 
 ```bash
 bun i
+npm uninstall youtube-dl-exec
+npm install youtube-dl-exec youtube-sr ffmpeg-static
 ```
+
 
 To run:
 
